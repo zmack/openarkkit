@@ -48,6 +48,7 @@ def parse_options():
     parser.add_option("", "--ignore-key-columns", dest="ignore_key_columns", default="", help="Comma-separated key columns to ignore.  Note that this will make the chunk sizes inconsistent.")
     parser.add_option("", "--dry-run", action="store_true", dest="dry_run", default=False, help="Don't actually run the commands, just print them out.")
     parser.add_option("", "--manual", action="store_true", dest="manual", default=False, help="Use the hard coded manual data passes.")
+    parser.add_option("", "--migration", dest="migration", default=False, help="Insert migration id in schema_migrations")
     return parser.parse_args()
 
 def verbose(message):
@@ -973,6 +974,16 @@ def exit_with_error(error_message):
     print_error(error_message)
     sys.exit(1)
 
+def insert_migration_id():
+    """
+    Insert the migration id into schema_migrations
+    """
+    query = """
+        INSERT INTO schema_migrations values ("%s")
+        """ % (options.migration)
+    act_query(query)
+    verbose("Migration id %s was inserted into schema_migrations" % (options.migration))
+
 
 try:
     try:
@@ -1080,6 +1091,9 @@ try:
                         drop_table(archive_table_name)
                         verbose("DROP TABLE "+archive_table_name+" completed.")
                         verbose("ALTER TABLE completed")
+                if options.migration:
+                    insert_migration_id()
+
     except Exception, err:
         print Exception, err
         exit_with_error(err)
